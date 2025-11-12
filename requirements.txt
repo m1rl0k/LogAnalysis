@@ -22,7 +22,7 @@ joblib==1.4.2
 
 # API & Monitoring
 Flask-Limiter==3.7.0
-Flask-CORS==4.0.1
+Flask-CORS==6.0.0
 prometheus-flask-exporter==0.23.0
 
 # Utilities
