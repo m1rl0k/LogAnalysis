@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  log-analysis-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: log-analysis-api
+    ports:
+      - "5000:5000"
+      - "9090:9090"
+    environment:
+      # Flask Configuration
+      - FLASK_ENV=production
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=5000
+      
+      # Security
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - MAX_CONTENT_LENGTH=16777216  # 16MB
+      
+      # Rate Limiting
+      - RATE_LIMIT_ENABLED=True
+      - RATE_LIMIT_PER_MINUTE=60
+      - RATE_LIMIT_PER_HOUR=1000
+      
+      # Memory Management
+      - MAX_LOGS_IN_MEMORY=100000
+      - MAX_BATCH_SIZE=10000
+      - LOG_RETENTION_HOURS=24
+      
+      # ML Model Configuration
+      - TFIDF_MAX_FEATURES=100
+      - ANOMALY_CONTAMINATION=0.1
+      - DBSCAN_EPS=0.5
+      - DBSCAN_MIN_SAMPLES=2
+      
+      # Model Persistence
+      - MODEL_DIR=/app/models
+      - AUTO_SAVE_MODELS=True
+      - MODEL_VERSION=v1
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/app.log
+      
+      # Monitoring
+      - ENABLE_METRICS=True
+      - METRICS_PORT=9090
+    
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    networks:
+      - log-analysis-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+networks:
+  log-analysis-network:
+    driver: bridge
+

@@ -1,6 +1,7 @@
 import argparse
 import requests
 import json
+import base64
 from tqdm import tqdm
 
 def train_model(logs, batch_size=1000):
