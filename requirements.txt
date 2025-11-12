@@ -13,7 +13,7 @@ pyod==1.1.2
 
 # NLP
 gensim==4.3.2
-nltk==3.8.1
+nltk==3.9
 
 # Visualization
 matplotlib==3.8.2
