@@ -15,16 +15,25 @@ Production-ready REST API with:
 
 ```bash
 # Install & generate data
-pip install -r requirements.txt
-python3 generate_datasets.py
+make install
+make data
+
+# Analyze a dataset (NO CURL NEEDED!)
+python app.py analyze data/sensor_data.csv temperature
+
+# Train unified model
+python app.py train data/sales_data.csv sales
+
+# Check status
+python app.py status
 
 # Start server
-PORT=5001 python app.py
+python app.py
 
-# Analyze everything (see COMMANDS.md for all commands)
-curl -X POST http://localhost:5001/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"file": "data/sensor_data.csv", "target": "temperature"}'
+# Or use Makefile shortcuts
+make analyze-sensors  # Analyze 20K sensor readings
+make train            # Train on all 55K samples
+make help             # See all commands
 ```
 
 ## Features

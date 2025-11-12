@@ -252,6 +252,83 @@ def validate_request(required_fields: List[str]):
 
 # ==================== CORE ANALYTICS FUNCTIONS ====================
 
+# ==================== SMART DATA DETECTION ====================
+
+def auto_detect_column_types(df: pd.DataFrame) -> Dict[str, List[str]]:
+    """
+    Auto-detect column types and semantic meaning.
+
+    Detects:
+    - Dates/timestamps
+    - Monetary values (cost, price, amount, revenue)
+    - Percentages
+    - IDs/keys
+    - Categories
+    - Metrics (counts, rates, scores)
+    """
+    detected = {
+        'datetime': [],
+        'monetary': [],
+        'percentage': [],
+        'identifier': [],
+        'category': [],
+        'metric': [],
+        'text': []
+    }
+
+    for col in df.columns:
+        col_lower = col.lower()
+
+        # Check for datetime
+        if any(kw in col_lower for kw in ['date', 'time', 'timestamp', 'created', 'updated', 'at']):
+            try:
+                parsed = pd.to_datetime(df[col], errors='coerce')
+                if parsed.notna().sum() / len(df) > 0.5:
+                    detected['datetime'].append(col)
+                    continue
+            except Exception:
+                pass
+
+        # Check for monetary values
+        if any(kw in col_lower for kw in ['cost', 'price', 'amount', 'revenue', 'sales', 'payment',
+                                           'fee', 'charge', 'total', 'subtotal', 'balance', 'salary',
+                                           'wage', 'income', 'expense', 'budget', 'usd', 'eur', 'gbp']):
+            if pd.api.types.is_numeric_dtype(df[col]):
+                detected['monetary'].append(col)
+                continue
+
+        # Check for percentages
+        if any(kw in col_lower for kw in ['percent', 'pct', 'rate', 'ratio']) or col.endswith('%'):
+            if pd.api.types.is_numeric_dtype(df[col]):
+                detected['percentage'].append(col)
+                continue
+
+        # Check for identifiers
+        if any(kw in col_lower for kw in ['id', 'key', 'code', 'number', 'ref', 'uuid', 'guid']):
+            detected['identifier'].append(col)
+            continue
+
+        # Check for categories
+        if pd.api.types.is_object_dtype(df[col]) or pd.api.types.is_categorical_dtype(df[col]):
+            unique_ratio = df[col].nunique() / len(df)
+            if unique_ratio < 0.5:  # Less than 50% unique values
+                detected['category'].append(col)
+                continue
+
+        # Check for metrics (counts, scores, ratings)
+        if any(kw in col_lower for kw in ['count', 'total', 'sum', 'avg', 'mean', 'score',
+                                           'rating', 'level', 'rank', 'index']):
+            if pd.api.types.is_numeric_dtype(df[col]):
+                detected['metric'].append(col)
+                continue
+
+        # Default to text if object type
+        if pd.api.types.is_object_dtype(df[col]):
+            detected['text'].append(col)
+
+    return detected
+
+
 # ==================== LOG PARSING & TEXT ANOMALY DETECTION ====================
 
 def parse_log_file(file_path: str) -> pd.DataFrame:
@@ -1753,7 +1830,14 @@ def analyze():
 def generate_analysis_visualization(df: pd.DataFrame, numeric_cols: List[str],
                                     outliers: Dict, anomalies: Dict, dataset_name: str = 'data') -> Tuple[str, str]:
     """
-    Generate comprehensive analysis visualization and save to analysis folder.
+    Generate comprehensive analysis visualization with tooltips and meaningful insights.
+
+    Features:
+    - Auto-detects time columns for proper temporal axis
+    - Standardized scales for multi-series comparison
+    - Annotated outliers and anomalies with actual values
+    - Statistical summary with key insights
+    - Color-coded by severity
 
     Returns:
         Tuple of (base64_encoded_image, saved_file_path)
@@ -1768,8 +1852,28 @@ def generate_analysis_visualization(df: pd.DataFrame, numeric_cols: List[str],
         filename = f"{dataset_name}_analysis_{timestamp}.png"
         filepath = os.path.join(analysis_dir, filename)
 
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10), dpi=config.VISUALIZATION_DPI)
-        fig.suptitle(f'Comprehensive Data Analysis - {dataset_name}', fontsize=16, fontweight='bold')
+        # Auto-detect time column
+        time_col = None
+        for col in df.columns:
+            if 'time' in col.lower() or 'date' in col.lower():
+                try:
+                    df[col] = pd.to_datetime(df[col])
+                    time_col = col
+                    break
+                except:
+                    pass
+
+        # Use time column or index for x-axis
+        if time_col:
+            x_axis = df[time_col]
+            x_label = time_col
+        else:
+            x_axis = df.index
+            x_label = 'Index'
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12), dpi=config.VISUALIZATION_DPI)
+        fig.suptitle(f'📊 Comprehensive Analysis: {dataset_name}\n{len(df)} rows | {len(numeric_cols)} numeric columns',
+                    fontsize=16, fontweight='bold', y=0.98)
 
         # Determine best time axis for plotting
         time_col = None
@@ -1809,27 +1913,64 @@ def generate_analysis_visualization(df: pd.DataFrame, numeric_cols: List[str],
         primary_col = max(numeric_cols, key=lambda c: df[c].std(skipna=True) if df[c].std(skipna=True) is not None else 0)
         primary_series = df[primary_col]
 
-        # Plot 2: Outliers referencing the primary column
+        # Plot 2: Outliers referencing the primary column with annotations
         ax2 = axes[0, 1]
         outlier_flags = outliers['is_outlier']
+        colors = ['#D7263D' if flag else '#6EA4BF' for flag in outlier_flags]
         ax2.scatter(time_values, primary_series,
-                    c=['#D7263D' if flag else '#6EA4BF' for flag in outlier_flags],
-                    alpha=0.7, s=35, edgecolors='k', linewidths=0.2)
-        ax2.set_title(f'Outliers (IQR) on {primary_col}: {outliers["n_outliers"]} rows')
-        ax2.set_xlabel(time_col or 'Index')
-        ax2.set_ylabel(primary_col)
-        ax2.grid(True, alpha=0.3)
+                    c=colors, alpha=0.7, s=35, edgecolors='k', linewidths=0.2)
 
-        # Plot 3: Anomalies highlighting the same primary column
+        # Annotate top 5 outliers with their values
+        outlier_indices = [i for i, flag in enumerate(outlier_flags) if flag]
+        if outlier_indices:
+            # Get top 5 most extreme outliers
+            outlier_values = [(i, abs(primary_series.iloc[i] - primary_series.median()))
+                            for i in outlier_indices]
+            top_outliers = sorted(outlier_values, key=lambda x: x[1], reverse=True)[:5]
+
+            for idx, _ in top_outliers:
+                value = primary_series.iloc[idx]
+                ax2.annotate(f'{value:.1f}',
+                           xy=(time_values[idx] if hasattr(time_values, '__getitem__') else idx, value),
+                           xytext=(5, 5), textcoords='offset points',
+                           fontsize=8, color='#D7263D', fontweight='bold',
+                           bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='#D7263D'))
+
+        ax2.set_title(f'🔴 Outliers (IQR) on {primary_col}: {outliers["n_outliers"]} rows',
+                     fontsize=11, fontweight='bold')
+        ax2.set_xlabel(time_col or 'Index', fontsize=10)
+        ax2.set_ylabel(primary_col, fontsize=10)
+        ax2.grid(True, alpha=0.3, linestyle='--')
+
+        # Plot 3: Anomalies highlighting the same primary column with annotations
         ax3 = axes[1, 0]
         anomaly_flags = anomalies['is_anomaly']
+        colors = ['#FF9F1C' if flag else '#2EC4B6' for flag in anomaly_flags]
         ax3.scatter(time_values, primary_series,
-                    c=['#FF9F1C' if flag else '#2EC4B6' for flag in anomaly_flags],
-                    alpha=0.7, s=35, edgecolors='k', linewidths=0.2)
-        ax3.set_title(f'Anomalies (Isolation Forest) on {primary_col}: {anomalies["n_anomalies"]}')
-        ax3.set_xlabel(time_col or 'Index')
-        ax3.set_ylabel(primary_col)
-        ax3.grid(True, alpha=0.3)
+                    c=colors, alpha=0.7, s=35, edgecolors='k', linewidths=0.2)
+
+        # Annotate top 5 anomalies with their values
+        anomaly_indices = [i for i, flag in enumerate(anomaly_flags) if flag]
+        if anomaly_indices:
+            # Get top 5 most extreme anomalies
+            anomaly_values = [(i, abs(primary_series.iloc[i] - primary_series.median()))
+                            for i in anomaly_indices]
+            top_anomalies = sorted(anomaly_values, key=lambda x: x[1], reverse=True)[:5]
+
+            for idx, _ in top_anomalies:
+                value = primary_series.iloc[idx]
+                ax3.annotate(f'{value:.1f}',
+                           xy=(time_values[idx] if hasattr(time_values, '__getitem__') else idx, value),
+                           xytext=(5, -15), textcoords='offset points',
+                           fontsize=8, color='#FF9F1C', fontweight='bold',
+                           bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'white',
+                                'alpha': 0.7, 'edgecolor': '#FF9F1C'})
+
+        ax3.set_title(f'⚠️  Anomalies (Isolation Forest) on {primary_col}: {anomalies["n_anomalies"]} rows',
+                     fontsize=11, fontweight='bold')
+        ax3.set_xlabel(time_col or 'Index', fontsize=10)
+        ax3.set_ylabel(primary_col, fontsize=10)
+        ax3.grid(True, alpha=0.3, linestyle='--')
 
         # Plot 4: Statistics
         ax4 = axes[1, 1]
@@ -1959,11 +2100,12 @@ with app.app_context():
 
 
 def cli_analyze(file_path: str, target: str = None):
-    """CLI: Analyze a dataset."""
+    """CLI: Analyze a dataset with auto-detection and visualization."""
     print(f"\n{'='*60}")
     print(f"ANALYZING: {file_path}")
     print('='*60)
 
+    # Load data
     if file_path.endswith('.csv'):
         df = pd.read_csv(file_path)
     elif file_path.endswith(('.xlsx', '.xls')):
@@ -1973,39 +2115,114 @@ def cli_analyze(file_path: str, target: str = None):
     elif file_path.endswith(('.log', '.txt')):
         df = parse_log_file(file_path)
     else:
-        print(f"❌ Unsupported file format")
+        print("❌ Unsupported file format")
         return
 
+    dataset_name = os.path.basename(file_path).rsplit('.', 1)[0]
     print(f"✓ Loaded {len(df)} rows, {len(df.columns)} columns")
 
+    # Auto-detect column types
+    print(f"\n🔍 AUTO-DETECTING COLUMN TYPES...")
+    detected_types = auto_detect_column_types(df)
+
+    if detected_types['datetime']:
+        print(f"  📅 Date/Time: {', '.join(detected_types['datetime'])}")
+    if detected_types['monetary']:
+        print(f"  💰 Monetary: {', '.join(detected_types['monetary'])}")
+    if detected_types['percentage']:
+        print(f"  📊 Percentage: {', '.join(detected_types['percentage'])}")
+    if detected_types['category']:
+        print(f"  🏷️  Category: {', '.join(detected_types['category'][:3])}{'...' if len(detected_types['category']) > 3 else ''}")
+    if detected_types['metric']:
+        print(f"  📈 Metric: {', '.join(detected_types['metric'][:3])}{'...' if len(detected_types['metric']) > 3 else ''}")
+
+    # Get numeric columns
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     if not numeric_cols:
         print("❌ No numeric columns found")
         return
 
-    print(f"✓ Numeric columns: {', '.join(numeric_cols)}")
+    print(f"\n✓ Numeric columns: {', '.join(numeric_cols[:5])}{'...' if len(numeric_cols) > 5 else ''}")
 
+    # Outlier detection
     print(f"\n🔍 OUTLIER DETECTION (IQR)")
     outliers = detect_outliers_iqr(df, numeric_cols)
     print(f"  Found: {outliers['n_outliers']} ({outliers['outlier_percentage']:.1f}%)")
 
+    # Anomaly detection
     print(f"\n⚠️  ANOMALY DETECTION (Isolation Forest)")
     anomalies = detect_anomalies_iforest(df, numeric_cols)
     print(f"  Found: {anomalies['n_anomalies']} ({anomalies['anomaly_percentage']:.1f}%)")
 
+    # Auto-Forecasting (if time-series data detected)
     if len(numeric_cols) > 0:
         forecast_col = target if target and target in numeric_cols else numeric_cols[0]
-        print(f"\n📈 FORECASTING ({forecast_col})")
-        forecast = forecast_linear_trend(df, forecast_col, horizon=5)
-        print(f"  Method: Linear Trend")
-        print(f"  Next 5: {[round(x, 1) for x in forecast['forecast']]}")
-        print(f"  MAE: {forecast['metrics']['mae']:.2f}")
 
+        # Determine forecast horizon based on data size and time column
+        if detected_types['datetime']:
+            # Time-series detected - do intelligent forecasting
+            time_col = detected_types['datetime'][0]
+
+            # Calculate appropriate horizon based on data frequency
+            if len(df) > 1000:
+                horizon = 30  # Monthly forecast for large datasets
+            elif len(df) > 100:
+                horizon = 14  # 2-week forecast
+            else:
+                horizon = 7   # 1-week forecast
+
+            print(f"\n📈 AUTO-FORECASTING (Time-Series Detected)")
+            print(f"  Time Column: {time_col}")
+            print(f"  Target: {forecast_col}")
+            print(f"  Horizon: {horizon} periods")
+
+            # Try Prophet first if available
+            if PROPHET_AVAILABLE:
+                try:
+                    print(f"  Method: Prophet (with seasonality)")
+                    forecast = forecast_prophet(df, forecast_col, time_col, horizon)
+                    print(f"  Next {min(5, horizon)}: {[round(x, 1) for x in forecast['forecast'][:5]]}")
+                    print(f"  Confidence: [{round(forecast['forecast_lower'][0], 1)} - {round(forecast['forecast_upper'][0], 1)}]")
+                    print(f"  MAE: {forecast['metrics']['mae']:.2f}")
+                except Exception as e:
+                    print(f"  Prophet failed: {e}")
+                    print(f"  Falling back to Linear Trend...")
+                    forecast = forecast_linear_trend(df, forecast_col, horizon=horizon)
+                    print(f"  Next {min(5, horizon)}: {[round(x, 1) for x in forecast['forecast'][:5]]}")
+                    print(f"  MAE: {forecast['metrics']['mae']:.2f}")
+            else:
+                # Use linear trend
+                print(f"  Method: Linear Trend")
+                forecast = forecast_linear_trend(df, forecast_col, horizon=horizon)
+                print(f"  Next {min(5, horizon)}: {[round(x, 1) for x in forecast['forecast'][:5]]}")
+                print(f"  Slope: {forecast['metrics']['slope']:.3f}")
+                print(f"  MAE: {forecast['metrics']['mae']:.2f}")
+
+            # Also try exponential smoothing for comparison
+            print(f"\n  📊 Exponential Smoothing (comparison):")
+            forecast_exp = forecast_exponential_smoothing(df, forecast_col, horizon=horizon, alpha=0.3)
+            print(f"  Next {min(5, horizon)}: {[round(x, 1) for x in forecast_exp['forecast'][:5]]}")
+            print(f"  MAE: {forecast_exp['metrics']['mae']:.2f}")
+
+        else:
+            # No time column - simple forecast
+            print(f"\n📈 FORECASTING ({forecast_col})")
+            forecast = forecast_linear_trend(df, forecast_col, horizon=5)
+            print(f"  Method: Linear Trend")
+            print(f"  Next 5: {[round(x, 1) for x in forecast['forecast']]}")
+            print(f"  MAE: {forecast['metrics']['mae']:.2f}")
+
+    # Regression
     if target and target in numeric_cols:
         print(f"\n📉 REGRESSION (target: {target})")
         result = linear_regression(df, target, test_size=0.2)
         print(f"  R²: {result['metrics']['test_r2']:.3f}")
         print(f"  RMSE: {result['metrics']['test_rmse']:.3f}")
+
+    # Generate visualization
+    print(f"\n📊 GENERATING VISUALIZATION...")
+    viz_encoded, viz_path = generate_analysis_visualization(df, numeric_cols, outliers, anomalies, dataset_name)
+    print(f"  ✓ Saved: {viz_path}")
 
     print(f"\n{'='*60}")
     print("✓ Analysis complete!")
