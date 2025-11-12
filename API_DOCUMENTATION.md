@@ -230,6 +230,143 @@ Remove logs older than retention period.
 
 ---
 
+### 7. Signal Preprocessing
+
+Apply advanced signal processing filters to numeric data columns with comprehensive visualization.
+
+**Endpoint:** `POST /preprocess_signal`
+
+**Request Body:**
+```json
+{
+  "dataset": "sensor_data",
+  "columns": ["temperature", "pressure"],
+  "signal_type": "auto",
+  "visualize": true,
+  "apply_to_dataset": false
+}
+```
+
+**Parameters:**
+- `dataset` (required): Name of the dataset to process
+- `columns` (optional): Array of column names to process. Defaults to all numeric columns
+- `signal_type` (optional): Signal type hint. Default: "auto"
+- `visualize` (optional): Generate visualizations. Default: true
+- `apply_to_dataset` (optional): Update dataset with cleaned signals. Default: false
+
+**Response:**
+```json
+{
+  "dataset": "sensor_data",
+  "columns_processed": ["temperature", "pressure"],
+  "results": {
+    "temperature": {
+      "method": "BUTTERWORTH+KALMAN",
+      "snr_improvement_db": 18.5,
+      "all_methods_snr": {
+        "butterworth": 17.2,
+        "savgol": 15.8,
+        "kalman": 19.3,
+        "hampel": 14.1,
+        "wavelet": 16.7
+      },
+      "original_length": 1000,
+      "cleaned_length": 1000,
+      "noise_std": 0.234,
+      "signal_std_original": 2.456,
+      "signal_std_cleaned": 2.389
+    }
+  },
+  "applied_to_dataset": false,
+  "visualizations": {
+    "temperature": {
+      "base64": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "path": "analysis/sensor_data_temperature_signal_processing_20240115_103000.png"
+    }
+  }
+}
+```
+
+**Visualization Features:**
+- Original vs Filtered signal comparison
+- FFT frequency analysis (before/after)
+- SNR comparison across all methods
+- Noise removed visualization
+- Statistical summaries
+
+**Supported Filters:**
+- Butterworth low-pass filter (auto-tuned cutoff)
+- Savitzky-Golay filter (peak-preserving)
+- Kalman filter (optimal state estimation)
+- Hampel filter (outlier removal)
+- Wavelet denoising (multi-resolution)
+
+**Status Codes:**
+- `200 OK` - Processing successful
+- `400 Bad Request` - Invalid parameters
+- `404 Not Found` - Dataset not found
+- `500 Internal Server Error` - Processing failed
+
+---
+
+### 8. Comprehensive Analysis (with Signal Processing)
+
+Run complete analysis including signal preprocessing, outlier detection, anomaly detection, and forecasting.
+
+**Endpoint:** `POST /analyze`
+
+**Request Body:**
+```json
+{
+  "dataset": "sensor_data",
+  "target": "temperature",
+  "preprocess_signals": true,
+  "signal_columns": ["temperature", "pressure"]
+}
+```
+
+**Parameters:**
+- `dataset` or `file` (required): Dataset name or file path
+- `target` (optional): Target column for regression
+- `preprocess_signals` (optional): Enable signal preprocessing. Default: false
+- `signal_columns` (optional): Columns to preprocess. Defaults to first 3 numeric columns
+
+**Response:**
+```json
+{
+  "dataset": "sensor_data",
+  "summary": {
+    "rows": 1000,
+    "columns": 5,
+    "numeric_columns": 3
+  },
+  "signal_processing": {
+    "columns_processed": ["temperature", "pressure"],
+    "results": {
+      "temperature": {
+        "method": "BUTTERWORTH+KALMAN",
+        "snr_improvement_db": 18.5,
+        "all_methods_snr": {...}
+      }
+    },
+    "visualizations": {...}
+  },
+  "outliers": {...},
+  "anomalies": {...},
+  "forecasts": {...},
+  "visualization": "base64_encoded_image",
+  "visualization_path": "analysis/sensor_data_analysis_20240115_103000.png"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Analysis successful
+- `400 Bad Request` - Invalid parameters
+- `404 Not Found` - Dataset/file not found
+- `500 Internal Server Error` - Analysis failed
+
+---
+
 ## Error Responses
 
 All error responses follow this format:

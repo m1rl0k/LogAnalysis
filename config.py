@@ -61,7 +61,11 @@ class Config:
     # Visualization
     VISUALIZATION_DPI: int = field(default_factory=lambda: int(os.getenv('VISUALIZATION_DPI', '100')))
     VISUALIZATION_FORMAT: str = field(default_factory=lambda: os.getenv('VISUALIZATION_FORMAT', 'png'))
-    
+
+    # File Upload Security
+    ALLOWED_UPLOAD_DIR: str = field(default_factory=lambda: os.getenv('ALLOWED_UPLOAD_DIR', 'data'))
+    ENABLE_FILE_UPLOAD_SECURITY: bool = field(default_factory=lambda: os.getenv('ENABLE_FILE_UPLOAD_SECURITY', 'True').lower() == 'true')
+
     def validate(self) -> None:
         """Validate configuration values."""
         if self.MAX_LOGS_IN_MEMORY < 1000:
