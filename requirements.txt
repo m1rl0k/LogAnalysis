@@ -27,7 +27,7 @@ prometheus-flask-exporter==0.23.0
 
 # Utilities
 python-dotenv==1.1.1
-requests==2.32.3
+requests==2.32.4
 tqdm==4.66.5
 
 # Production Server
