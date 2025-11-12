@@ -1764,7 +1764,7 @@ def upload_file():
             }
         }
 
-        logger.info(f"✓ Smart upload complete: {file_type} → {dataset_name} ({len(df)} rows)")
+        logger.info(f" Smart upload complete: {file_type} → {dataset_name} ({len(df)} rows)")
         return jsonify(response), 200
 
     except FileNotFoundError:
@@ -1829,7 +1829,7 @@ def detect_log_anomalies():
             for idx in anomaly_indices[:10]
         ]
 
-        logger.info(f"✓ Found {result['n_anomalies']} log anomalies")
+        logger.info(f" Found {result['n_anomalies']} log anomalies")
         return jsonify(result), 200
 
     except Exception as e:
@@ -2251,7 +2251,7 @@ def train_model():
         result['dataset_source'] = dataset_name
         result['samples_added'] = len(df)
 
-        logger.info(f"✓ Model '{model_name}' trained on {len(df)} samples from '{dataset_name}'")
+        logger.info(f" Model '{model_name}' trained on {len(df)} samples from '{dataset_name}'")
         return jsonify(result), 200
 
     except ValueError as e:
@@ -2391,7 +2391,7 @@ def train():
             model_metrics = result['metrics']
             total_samples = len(df)
 
-            logger.info(f"✓ Unified model trained on {total_samples} new samples from {dataset_name}")
+            logger.info(f" Unified model trained on {total_samples} new samples from {dataset_name}")
 
         response = {
             'status': 'success',
@@ -2662,7 +2662,7 @@ def generate_analysis_visualization(df: pd.DataFrame, numeric_cols: List[str],
             x_label = 'Index'
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12), dpi=config.VISUALIZATION_DPI)
-        fig.suptitle(f'📊 Comprehensive Analysis: {dataset_name}\n{len(df)} rows | {len(numeric_cols)} numeric columns',
+        fig.suptitle(f'Comprehensive Analysis: {dataset_name}\n{len(df)} rows | {len(numeric_cols)} numeric columns',
                     fontsize=16, fontweight='bold', y=0.98)
 
         # Determine best time axis for plotting
@@ -2726,7 +2726,7 @@ def generate_analysis_visualization(df: pd.DataFrame, numeric_cols: List[str],
                            fontsize=8, color='#D7263D', fontweight='bold',
                            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='#D7263D'))
 
-        ax2.set_title(f'🔴 Outliers (IQR) on {primary_col}: {outliers["n_outliers"]} rows',
+        ax2.set_title(f'Outliers (IQR) on {primary_col}: {outliers["n_outliers"]} rows',
                      fontsize=11, fontweight='bold')
         ax2.set_xlabel(time_col or 'Index', fontsize=10)
         ax2.set_ylabel(primary_col, fontsize=10)
@@ -2756,7 +2756,7 @@ def generate_analysis_visualization(df: pd.DataFrame, numeric_cols: List[str],
                            bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'white',
                                 'alpha': 0.7, 'edgecolor': '#FF9F1C'})
 
-        ax3.set_title(f'⚠️  Anomalies (Isolation Forest) on {primary_col}: {anomalies["n_anomalies"]} rows',
+        ax3.set_title(f'Anomalies (Isolation Forest) on {primary_col}: {anomalies["n_anomalies"]} rows',
                      fontsize=11, fontweight='bold')
         ax3.set_xlabel(time_col or 'Index', fontsize=10)
         ax3.set_ylabel(primary_col, fontsize=10)
@@ -2895,7 +2895,7 @@ with app.app_context():
     initialize()
 
 
-def cli_analyze(file_path: str, target: str = None):
+def cli_analyze(file_path: str, target: str = None, preprocess: bool = False):
     """CLI: Analyze a dataset with auto-detection and visualization."""
     print(f"\n{'='*60}")
     print(f"ANALYZING: {file_path}")
@@ -2911,55 +2911,58 @@ def cli_analyze(file_path: str, target: str = None):
     elif file_path.endswith(('.log', '.txt')):
         df = parse_log_file(file_path)
     else:
-        print("❌ Unsupported file format")
+        print(" Unsupported file format")
         return
 
     dataset_name = os.path.basename(file_path).rsplit('.', 1)[0]
-    print(f"✓ Loaded {len(df)} rows, {len(df.columns)} columns")
+    print(f" Loaded {len(df)} rows, {len(df.columns)} columns")
 
     # Auto-detect column types
-    print(f"\n🔍 AUTO-DETECTING COLUMN TYPES...")
+    print(f"\n AUTO-DETECTING COLUMN TYPES...")
     detected_types = auto_detect_column_types(df)
 
     if detected_types['datetime']:
-        print(f"  📅 Date/Time: {', '.join(detected_types['datetime'])}")
+        print(f"   Date/Time: {', '.join(detected_types['datetime'])}")
     if detected_types['monetary']:
-        print(f"  💰 Monetary: {', '.join(detected_types['monetary'])}")
+        print(f"   Monetary: {', '.join(detected_types['monetary'])}")
     if detected_types['percentage']:
         print(f"  📊 Percentage: {', '.join(detected_types['percentage'])}")
     if detected_types['category']:
-        print(f"  🏷️  Category: {', '.join(detected_types['category'][:3])}{'...' if len(detected_types['category']) > 3 else ''}")
+        print(f"    Category: {', '.join(detected_types['category'][:3])}{'...' if len(detected_types['category']) > 3 else ''}")
     if detected_types['metric']:
-        print(f"  📈 Metric: {', '.join(detected_types['metric'][:3])}{'...' if len(detected_types['metric']) > 3 else ''}")
+        print(f"   Metric: {', '.join(detected_types['metric'][:3])}{'...' if len(detected_types['metric']) > 3 else ''}")
 
     # Get numeric columns
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     if not numeric_cols:
-        print("❌ No numeric columns found")
+        print(" No numeric columns found")
         return
 
-    print(f"\n✓ Numeric columns: {', '.join(numeric_cols[:5])}{'...' if len(numeric_cols) > 5 else ''}")
+    print(f"\n Numeric columns: {', '.join(numeric_cols[:5])}{'...' if len(numeric_cols) > 5 else ''}")
 
-    # LOTTERY-WINNING PREPROCESSING
-    print(f"\n🎰 SIGNAL PREPROCESSING (Making Data Perfect)...")
-    preprocessing_results = {}
-    for col in numeric_cols[:3]:  # Preprocess top 3 columns
-        result = preprocess_signal_perfect(df[col])
-        preprocessing_results[col] = result
-        print(f"  • {col}: {result['method']} (SNR: {result['improvement']:.1f} dB)")
+    # SIGNAL PREPROCESSING (optional, off by default)
+    if preprocess:
+        print(f"\n SIGNAL PREPROCESSING (Making Data Perfect)...")
+        preprocessing_results = {}
+        for col in numeric_cols[:3]:  # Preprocess top 3 columns
+            result = preprocess_signal_perfect(df[col])
+            preprocessing_results[col] = result
+            print(f"  • {col}: {result['method']} (SNR: {result['improvement']:.1f} dB)")
 
-        # Replace with cleaned signal
-        df[col] = result['cleaned']
+            # Replace with cleaned signal
+            df[col] = result['cleaned']
 
-    print(f"  ✓ Data cleaned with state-of-the-art filters!")
+        print(f"   Data cleaned with state-of-the-art filters!")
+    else:
+        print(f"\n  SIGNAL PREPROCESSING: Skipped (use --preprocess to enable)")
 
     # Outlier detection
-    print(f"\n🔍 OUTLIER DETECTION (IQR)")
+    print(f"\n OUTLIER DETECTION (IQR)")
     outliers = detect_outliers_iqr(df, numeric_cols)
     print(f"  Found: {outliers['n_outliers']} ({outliers['outlier_percentage']:.1f}%)")
 
     # Anomaly detection
-    print(f"\n⚠️  ANOMALY DETECTION (Isolation Forest)")
+    print(f"\n  ANOMALY DETECTION (Isolation Forest)")
     anomalies = detect_anomalies_iforest(df, numeric_cols)
     print(f"  Found: {anomalies['n_anomalies']} ({anomalies['anomaly_percentage']:.1f}%)")
 
@@ -2980,16 +2983,16 @@ def cli_analyze(file_path: str, target: str = None):
             else:
                 horizon = 7   # 1-week forecast
 
-            print(f"\n📈 AUTO-FORECASTING (Time-Series Detected)")
+            print(f"\n AUTO-FORECASTING (Time-Series Detected)")
             print(f"  Time Column: {time_col}")
             print(f"  Target: {forecast_col}")
             print(f"  Horizon: {horizon} periods")
-            print(f"  🤖 Using BEST-IN-CLASS Ensemble Forecasting...")
+            print(f"   Using BEST-IN-CLASS Ensemble Forecasting...")
 
             # Use the best ensemble forecasting
             forecast = auto_forecast_best(df, forecast_col, time_col, horizon)
 
-            print(f"\n  ✅ {forecast['method']}")
+            print(f"\n   {forecast['method']}")
             print(f"  Best Single Model: {forecast['best_single'].upper()}")
             print(f"  Next {min(5, horizon)}: {[round(x, 1) for x in forecast['forecast'][:5]]}")
             print(f"  Validation MAE: {forecast['metrics']['mae']:.2f}")
@@ -3001,13 +3004,13 @@ def cli_analyze(file_path: str, target: str = None):
 
             # Show ensemble weights
             if 'weights' in forecast['metrics']:
-                print(f"\n  ⚖️  Ensemble Weights:")
+                print(f"\n    Ensemble Weights:")
                 for model, weight in forecast['metrics']['weights'].items():
                     print(f"    • {model.upper()}: {weight:.1%}")
 
         else:
             # No time column - simple forecast
-            print(f"\n📈 FORECASTING ({forecast_col})")
+            print(f"\n FORECASTING ({forecast_col})")
             forecast = forecast_linear_trend(df, forecast_col, horizon=5)
             print(f"  Method: Linear Trend")
             print(f"  Next 5: {[round(x, 1) for x in forecast['forecast']]}")
@@ -3023,10 +3026,10 @@ def cli_analyze(file_path: str, target: str = None):
     # Generate visualization
     print(f"\n📊 GENERATING VISUALIZATION...")
     viz_encoded, viz_path = generate_analysis_visualization(df, numeric_cols, outliers, anomalies, dataset_name)
-    print(f"  ✓ Saved: {viz_path}")
+    print(f"   Saved: {viz_path}")
 
     print(f"\n{'='*60}")
-    print("✓ Analysis complete!")
+    print(" Analysis complete!")
     print('='*60)
 
 
@@ -3043,24 +3046,24 @@ def cli_train(file_path: str, target: str):
     elif file_path.endswith('.json'):
         df = pd.read_json(file_path)
     else:
-        print(f"❌ Unsupported file format")
+        print(f" Unsupported file format")
         return
 
-    print(f"✓ Loaded {len(df)} rows")
+    print(f" Loaded {len(df)} rows")
 
     if target not in df.columns:
-        print(f"❌ Target column '{target}' not found")
+        print(f" Target column '{target}' not found")
         return
 
     result = linear_regression(df, target, model_name="unified_model", incremental=True)
 
-    print(f"✓ Model: unified_model")
-    print(f"✓ Samples added: {len(df)}")
-    print(f"✓ R²: {result['metrics']['test_r2']:.3f}")
-    print(f"✓ RMSE: {result['metrics']['test_rmse']:.3f}")
+    print(f" Model: unified_model")
+    print(f" Samples added: {len(df)}")
+    print(f" R²: {result['metrics']['test_r2']:.3f}")
+    print(f" RMSE: {result['metrics']['test_rmse']:.3f}")
 
     print(f"\n{'='*60}")
-    print("✓ Training complete! Model saved to models/")
+    print(" Training complete! Model saved to models/")
     print('='*60)
 
 
@@ -3073,10 +3076,11 @@ def cli_main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python app.py                                    # Start server
-  python app.py analyze data/sales_data.csv        # Analyze dataset
-  python app.py train data/sales_data.csv sales    # Train model
-  python app.py status                             # Show status
+  python app.py                                         # Start server
+  python app.py analyze data/sales_data.csv             # Analyze dataset (no preprocessing)
+  python app.py analyze data/sales_data.csv --preprocess # Analyze with signal preprocessing
+  python app.py train data/sales_data.csv sales         # Train model
+  python app.py status                                  # Show status
         """
     )
 
@@ -3086,18 +3090,20 @@ Examples:
     parser.add_argument('file', nargs='?', help='File path')
     parser.add_argument('target', nargs='?', help='Target column for training')
     parser.add_argument('--port', type=int, default=5001, help='Server port')
+    parser.add_argument('--preprocess', action='store_true',
+                       help='Enable signal preprocessing (off by default)')
 
     args = parser.parse_args()
 
     if args.command == 'analyze':
         if not args.file:
-            print("❌ File path required")
+            print(" File path required")
             sys.exit(1)
-        cli_analyze(args.file, args.target)
+        cli_analyze(args.file, args.target, args.preprocess)
 
     elif args.command == 'train':
         if not args.file or not args.target:
-            print("❌ File and target required")
+            print(" File and target required")
             sys.exit(1)
         cli_train(args.file, args.target)
 
