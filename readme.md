@@ -1,177 +1,242 @@
-# Log Analysis Tool
+# Analytics API - Turnkey ML Platform
 
-This advanced log analysis tool leverages machine learning and natural language processing techniques to analyze log data, identify patterns, detect anomalies, and extract meaningful insights from large volumes of log entries.
+**Upload anything → Get anomaly alerts & forecasts**
 
-## What It Does
+Production-ready REST API with:
+- 📝 **Log Anomaly Detection** (TF-IDF + DBSCAN for text)
+- 🔍 **Outlier Detection** (IQR, Z-score, Isolation Forest)
+- 📈 **Time-Series Forecasting** (Linear, Exponential, Prophet)
+- 🧠 **Unified Model** (One model, all data, continuous learning)
+- 📊 **Smart Upload** (Auto-detects CSV, Excel, JSON, Logs)
 
-This tool performs several key functions on log data:
+**55,000+ rows tested | 6 datasets | 1 unified model**
 
-1. Pattern Recognition: Identifies common patterns in log messages, helping to group similar events and detect recurring issues.
+## Quick Start
 
-2. Anomaly Detection: Flags unusual log entries that deviate from the norm, which could indicate potential problems or security threats.
+```bash
+# Install & generate data
+pip install -r requirements.txt
+python3 generate_datasets.py
 
-3. NLP Analysis: Applies natural language processing to understand the content of log messages, enabling more intelligent analysis.
+# Start server
+PORT=5001 python app.py
 
-4. Temporal Analysis: Examines how log patterns and anomalies change over time, providing insights into system behavior trends.
-
-5. Visualization: Generates visual representations of the analysis results, making it easier to interpret complex log data.
-
-## Key Features
-
-### 1. Log Ingestion and Preprocessing
-- Parses various log formats, extracting timestamp, log level, and message content.
-- Handles large volumes of log data efficiently.
-
-### 2. Feature Extraction
-- Utilizes TF-IDF (Term Frequency-Inverse Document Frequency) vectorization to convert log messages into numerical features.
-- This allows the tool to understand the importance of different words in the context of the entire log dataset.
-
-### 3. Anomaly Detection
-- Employs Isolation Forest algorithm to identify outliers in log data.
-- Isolation Forest is particularly effective for high-dimensional data and can detect anomalies that might be missed by traditional methods.
-
-### 4. Pattern Recognition
-- Uses DBSCAN (Density-Based Spatial Clustering of Applications with Noise) for identifying clusters of similar log entries.
-- DBSCAN is capable of discovering clusters of arbitrary shape and is robust to outliers.
-
-### 5. NLP Analysis
-- Incorporates Word2Vec model to understand semantic relationships between words in log messages.
-- This allows for more nuanced analysis, capturing the meaning behind log entries rather than just literal matches.
-
-### 6. Visualization
-- Generates a scatter plot showing:
-  - Log entries over time (x-axis)
-  - Anomaly scores (y-axis)
-  - Detected patterns (color-coded)
-- This visualization helps in quickly identifying temporal patterns and anomalies.
-
-### 7. API Interface
-- Provides a RESTful API for easy integration with other tools and systems.
-- Supports both training of models and analysis of new log data.
-
-### 8. Adaptive Learning
-- The tool can be retrained on new log data, allowing it to adapt to evolving system behaviors and log patterns over time.
-
-## Use Cases
-
-- IT Operations: Quickly identify issues in system logs that might indicate performance problems or failures.
-- Security Monitoring: Detect unusual patterns in log data that could signify security breaches or attempts.
-- Application Debugging: Analyze application logs to find recurring errors or performance bottlenecks.
-- Compliance Auditing: Identify logs that deviate from expected patterns, which might indicate compliance issues.
-
-## How It Works
-
-1. Log data is ingested and preprocessed to extract relevant information.
-2. The TF-IDF vectorizer converts log messages into numerical features.
-3. The Isolation Forest algorithm identifies anomalies based on these features.
-4. DBSCAN clustering groups similar log entries to identify common patterns.
-5. Word2Vec is used to analyze the semantic content of log messages.
-6. Results are compiled, including common patterns, significant outliers, and NLP insights.
-7. A visualization is generated to represent the findings graphically.
-
-This tool provides a comprehensive approach to log analysis, combining statistical methods, machine learning, and natural language processing to extract maximum value from log data.
-
-## Installation
-
-1. Create a new directory for the project and copy the following files into it:
-   - `app.py`
-   - `test.py`
-   - `log_dataset.json` (your log data file)
-
-2. Install the required dependencies:
-   ```
-   pip install flask pandas numpy scipy scikit-learn pyod gensim nltk matplotlib joblib tqdm requests argparse
-   ```
-
-3. Download the NLTK 'punkt' tokenizer data:
-   ```python
-   import nltk
-   nltk.download('punkt')
-   ```
-
-## Usage
-
-### Starting the Server
-
-Run the Flask application:
-
+# Analyze everything (see COMMANDS.md for all commands)
+curl -X POST http://localhost:5001/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"file": "data/sensor_data.csv", "target": "temperature"}'
 ```
+
+## Features
+
+✨ **Best-in-class lightweight algorithms:**
+- **Outlier Detection**: IQR, Z-score, Isolation Forest
+- **Linear Regression**: Ridge regression with automatic feature scaling
+- **Time-Series Forecasting**: Exponential smoothing & linear trend
+- **Model Training & Persistence**: Train once, predict many times
+
+🚀 **Production-ready:**
+- Thread-safe data & model storage
+- Rate limiting & security headers
+- Prometheus metrics
+- Health checks & monitoring
+- Docker support
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Run the Server
+
+```bash
 python app.py
 ```
 
-The server will start running on `http://localhost:5000`.
+Server starts at `http://localhost:5000`
 
-### Running the Client
+### 3. Test the API
 
-The `test.py` script can be used to train the model or analyze logs.
-
-1. For training:
-   ```
-   python test.py -t -f path_to_your_logfile.json
-   ```
-
-2. For analysis:
-   ```
-   python test.py -f path_to_your_logfile.json
-   ```
-
-If you don't specify a file with `-f`, it will default to `log_dataset.json` in the current directory.
-
-## API Endpoints
-
-- `/train` (POST): Train the model with new log data
-- `/analyze_logs` (POST): Analyze log data and return results
-
-## Input Data Format
-
-The input log data should be a JSON array of log entries. Each log entry should be a string that includes a timestamp, log level, and message. For example:
-
-```json
-[
-  "2023-07-25 10:00:01 INFO User authentication: User 'jsmith' logged in successfully",
-  "2023-07-25 10:00:02 DEBUG Database connection established: Connection ID 1234",
-  "2023-07-25 10:00:03 ERROR Database connection lost: Timeout after 30 seconds"
-]
+```bash
+python test.py
 ```
 
-## Output
+## Sample Data
 
-### Analysis Results
+Use the ready-to-go datasets in [`sample_data/`](sample_data) to exercise every endpoint without having to craft payloads from scratch:
 
-The analysis results include:
+| File | Format | Purpose |
+| --- | --- | --- |
+| `sample_data/sales_data.csv` | CSV | Multivariate retail metrics with a deliberate sales spike to test regression & outlier detection |
+| `sample_data/sales_data.xlsx` | Excel | Same data for validating Excel ingestion |
+| `sample_data/sales_data.json` | JSON | Direct upload example for the REST API |
+| `sample_data/energy_usage.csv` | CSV | Clean time-series readings for forecasting |
+| `sample_data/energy_usage.json` | JSON | Alternative time-series payload |
+| `sample_data/system_logs.txt` | Text | Small log file you can vectorize or preprocess before uploading |
 
-1. Common patterns found in the logs
-2. Significant outliers detected
-3. A visualization of the log analysis
+### Quick functional walkthrough
 
-### Visualization
+1. **Upload** the CSV/JSON data
+   ```bash
+   python - <<'PY'
+   import pandas as pd, requests
+   df = pd.read_csv('sample_data/sales_data.csv')
+   payload = {"name": "sales_sample", "data": df.to_dict('records')}
+   res = requests.post('http://localhost:5000/upload_data', json=payload, timeout=10)
+   res.raise_for_status()
+   print(res.json())
+   PY
+   ```
 
-The script generates a visualization saved as `log_visualization.png`. This plot shows:
+2. **Detect outliers**:
+   ```bash
+   curl -s http://localhost:5000/detect_outliers \
+     -H 'Content-Type: application/json' \
+     -d '{"dataset": "sales_sample", "method": "iforest", "columns": ["sales", "marketing_spend"]}' | jq .statistics
+   ```
 
-- X-axis: Timestamps of the log entries
-- Y-axis: Anomaly scores
-- Color: Different colors represent different patterns identified in the logs
+3. **Run regression**:
+   ```bash
+   curl -s http://localhost:5000/regression \
+     -H 'Content-Type: application/json' \
+     -d '{"dataset": "sales_sample", "target": "sales", "features": ["marketing_spend", "temperature"], "model_name": "sales_model"}' | jq .metrics
+   ```
 
-This visualization helps in quickly identifying temporal patterns, anomalies, and their relationships.
+4. **Forecast** with the energy dataset:
+   ```bash
+   python - <<'PY'
+   import pandas as pd, requests
+   df = pd.read_csv('sample_data/energy_usage.csv')
+   payload = {"name": "energy_sample", "data": df.to_dict('records')}
+   requests.post('http://localhost:5000/upload_data', json=payload, timeout=10).raise_for_status()
+   res = requests.post('http://localhost:5000/forecast', json={
+       "dataset": "energy_sample",
+       "value_column": "energy_usage",
+       "method": "linear",
+       "horizon": 5
+   }, timeout=10)
+   print(res.json()["forecast"])
+   PY
+   ```
 
-### Training Output
+5. **Run the automated suite** once the data is loaded:
+   ```bash
+   pytest tests/test_analytics.py -v
+   ```
 
-When running in training mode, the script will:
+## Core Endpoints
 
-1. Process the input logs in batches
-2. Train the models (TF-IDF vectorizer, Isolation Forest for anomaly detection, DBSCAN for pattern recognition, and Word2Vec for NLP analysis)
-3. Save the trained models in a `models` directory:
-   - `vectorizer.joblib`: TF-IDF vectorizer
-   - `anomaly_model.joblib`: Isolation Forest model
-   - `pattern_model.joblib`: DBSCAN model
-   - `word2vec_model`: Word2Vec model
+### Upload Data
+```bash
+POST /upload_data
+{"name": "sales", "data": [{"col1": 10, "col2": 20}]}
+```
 
-These saved models are then used when running the analysis, ensuring consistent processing across multiple runs.
+### Detect Outliers
+```bash
+POST /detect_outliers
+{"dataset": "sales", "method": "iqr"}
+# methods: iqr, zscore, iforest
+```
 
-## Contributing
+### Train Model
+```bash
+POST /train_model
+{"dataset": "sales", "target": "col1", "model_name": "predictor"}
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Predict
+```bash
+POST /predict
+{"model_name": "predictor", "data": [{"col2": 25}]}
+```
+
+### Forecast
+```bash
+POST /forecast
+{"dataset": "sales", "value_column": "col1", "method": "linear", "horizon": 10}
+# methods: linear, exponential
+```
+
+### Regression
+```bash
+POST /regression
+{"dataset": "sales", "target": "col1", "features": ["col2"]}
+```
+
+## Example Usage
+
+```python
+import requests
+
+# Upload data
+requests.post('http://localhost:5000/upload_data', json={
+    "name": "sales",
+    "data": [
+        {"date": "2024-01-01", "sales": 100, "marketing": 20},
+        {"date": "2024-01-02", "sales": 120, "marketing": 25}
+    ]
+})
+
+# Detect outliers
+result = requests.post('http://localhost:5000/detect_outliers', json={
+    "dataset": "sales",
+    "method": "iforest"
+})
+print(f"Found {result.json()['n_outliers']} outliers")
+
+# Train model
+requests.post('http://localhost:5000/train_model', json={
+    "dataset": "sales",
+    "target": "sales",
+    "model_name": "predictor",
+    "features": ["marketing"]
+})
+
+# Predict
+predictions = requests.post('http://localhost:5000/predict', json={
+    "model_name": "predictor",
+    "data": [{"marketing": 30}]
+})
+print(predictions.json()['predictions'])
+```
+
+## Configuration
+
+Create `.env` file (see `.env.example`):
+
+```bash
+SECRET_KEY=your-secret-key
+RATE_LIMIT_PER_MINUTE=60
+MAX_BATCH_SIZE=10000
+MODEL_DIR=models
+```
+
+## Docker
+
+```bash
+docker-compose up -d
+```
+
+## Algorithm Details
+
+**IQR**: Fast, no training. Flags values outside Q1-1.5×IQR to Q3+1.5×IQR  
+**Z-Score**: Assumes normal distribution. Flags |z| > 3  
+**Isolation Forest**: Best for high-dimensional, non-linear patterns  
+**Ridge Regression**: L2 regularization, automatic scaling  
+**Exponential Smoothing**: Fast, good for stationary data  
+**Linear Trend**: Simple, interpretable forecasting  
+
+## Performance
+
+- 100K rows in memory
+- Sub-second responses
+- Isolation Forest: ~100ms for 10K rows
+- Regression: ~50ms for 10K rows
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT

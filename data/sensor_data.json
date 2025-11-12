@@ -1,0 +1,27 @@
+[
+  {"timestamp": "2024-01-01 00:00:00", "sensor_id": "A1", "temperature": 22.5, "humidity": 45, "pressure": 1013},
+  {"timestamp": "2024-01-01 01:00:00", "sensor_id": "A1", "temperature": 22.3, "humidity": 46, "pressure": 1012},
+  {"timestamp": "2024-01-01 02:00:00", "sensor_id": "A1", "temperature": 22.1, "humidity": 47, "pressure": 1011},
+  {"timestamp": "2024-01-01 03:00:00", "sensor_id": "A1", "temperature": 21.9, "humidity": 48, "pressure": 1010},
+  {"timestamp": "2024-01-01 04:00:00", "sensor_id": "A1", "temperature": 21.8, "humidity": 49, "pressure": 1009},
+  {"timestamp": "2024-01-01 05:00:00", "sensor_id": "A1", "temperature": 95.0, "humidity": 50, "pressure": 1008},
+  {"timestamp": "2024-01-01 06:00:00", "sensor_id": "A1", "temperature": 22.0, "humidity": 48, "pressure": 1010},
+  {"timestamp": "2024-01-01 07:00:00", "sensor_id": "A1", "temperature": 22.5, "humidity": 47, "pressure": 1011},
+  {"timestamp": "2024-01-01 08:00:00", "sensor_id": "A1", "temperature": 23.0, "humidity": 46, "pressure": 1012},
+  {"timestamp": "2024-01-01 09:00:00", "sensor_id": "A1", "temperature": 23.5, "humidity": 45, "pressure": 1013},
+  {"timestamp": "2024-01-01 10:00:00", "sensor_id": "A1", "temperature": 24.0, "humidity": 44, "pressure": 1014},
+  {"timestamp": "2024-01-01 11:00:00", "sensor_id": "A1", "temperature": 24.5, "humidity": 43, "pressure": 1015},
+  {"timestamp": "2024-01-01 12:00:00", "sensor_id": "A1", "temperature": 25.0, "humidity": 42, "pressure": 1016},
+  {"timestamp": "2024-01-01 13:00:00", "sensor_id": "A1", "temperature": 25.2, "humidity": 41, "pressure": 1016},
+  {"timestamp": "2024-01-01 14:00:00", "sensor_id": "A1", "temperature": 25.1, "humidity": 42, "pressure": 1015},
+  {"timestamp": "2024-01-01 15:00:00", "sensor_id": "A1", "temperature": 24.8, "humidity": 43, "pressure": 1014},
+  {"timestamp": "2024-01-01 16:00:00", "sensor_id": "A1", "temperature": 24.5, "humidity": 44, "pressure": 1013},
+  {"timestamp": "2024-01-01 17:00:00", "sensor_id": "A1", "temperature": 24.0, "humidity": 45, "pressure": 1012},
+  {"timestamp": "2024-01-01 18:00:00", "sensor_id": "A1", "temperature": 23.5, "humidity": 46, "pressure": 1011},
+  {"timestamp": "2024-01-01 19:00:00", "sensor_id": "A1", "temperature": 23.0, "humidity": 47, "pressure": 1010},
+  {"timestamp": "2024-01-01 20:00:00", "sensor_id": "A1", "temperature": 22.8, "humidity": 48, "pressure": 1009},
+  {"timestamp": "2024-01-01 21:00:00", "sensor_id": "A1", "temperature": 22.6, "humidity": 49, "pressure": 1008},
+  {"timestamp": "2024-01-01 22:00:00", "sensor_id": "A1", "temperature": 22.4, "humidity": 50, "pressure": 1007},
+  {"timestamp": "2024-01-01 23:00:00", "sensor_id": "A1", "temperature": 22.2, "humidity": 51, "pressure": 1006}
+]
+

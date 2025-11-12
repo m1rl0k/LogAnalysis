@@ -1,0 +1,5 @@
+2024-02-01 08:00:01 INFO sales-service Processed order 1001 in 320ms
+2024-02-01 08:00:03 WARN sales-service Inventory low for SKU-443
+2024-02-01 08:00:05 ERROR gateway Timeout while calling marketing-api
+2024-02-01 08:00:07 INFO marketing-service New campaign winter-promo started
+2024-02-01 08:00:09 INFO analytics-ingest Ingested dataset sales_data.csv (12 rows)
